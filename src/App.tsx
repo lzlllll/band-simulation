@@ -8,7 +8,7 @@ import Gigs from "./pages/Gigs";
 import Social from "./pages/Social";
 import Settings from "./pages/Settings";
 
-const BASE_NAME = "/lifetime-band-simulator";
+const BASE_NAME = "/band-simulation";
 
 export default function App() {
   return (
