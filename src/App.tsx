@@ -7,6 +7,7 @@ import Activities from "./pages/Activities";
 import Gigs from "./pages/Gigs";
 import Social from "./pages/Social";
 import Settings from "./pages/Settings";
+import CharacterCreation from "./pages/CharacterCreation";
 
 const BASE_NAME = "/band-simulation";
 
@@ -14,6 +15,7 @@ export default function App() {
   return (
     <Router basename={BASE_NAME}>
       <Routes>
+        <Route path="/create" element={<CharacterCreation />} />
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/roster" element={<Roster />} />

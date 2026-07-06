@@ -11,6 +11,8 @@ import type {
   NarrativePreference,
   NewContent,
   ParsedAIResponse,
+  Player,
+  StyleProficiency,
   TurnSnapshot,
 } from "../types";
 import { INITIAL_MEMBERS } from "../data/members";
@@ -385,6 +387,14 @@ interface Actions {
   startChat: (memberName: string) => void;
   endChat: () => void;
   sendChatMessage: (memberName: string, text: string) => Promise<void>;
+  initializeGame: (data: {
+    bandName: string;
+    motto: string;
+    player: Player;
+    members: Member[];
+    styles?: StyleProficiency[];
+    openingNarrative?: string;
+  }) => void;
 }
 
 export type GameStore = GameState & Actions;
@@ -673,6 +683,39 @@ export const useGameStore = create<GameStore>()(
           lastTurnSnapshot: undefined,
           isChattingWith: undefined,
         }),
+
+      initializeGame: (data) => {
+        const state = get();
+        const members = data.members.length > 0 
+          ? data.members.map((m, i) => ({ ...m, id: `m${i + 1}` }))
+          : INITIAL_MEMBERS;
+        set({
+          bandName: data.bandName,
+          motto: data.motto,
+          player: { ...data.player, id: "player" },
+          members,
+          styles: data.styles || initial.styles,
+          narratives: [{
+            turn: 0,
+            date: state.date,
+            action: "intro",
+            actionLabel: "故事开始",
+            userInput: "",
+            narrative: data.openingNarrative || `${data.bandName}是一支充满梦想的乐队。${data.motto}`,
+            delta: {},
+            suggestions: [
+              { text: "召集大家进棚排练", kind: "action" },
+              { text: "给成员群发一条消息", kind: "action" },
+              { text: "看看最近有什么演出邀约", kind: "gig" },
+            ],
+            newContent: {},
+            source: "llm",
+            rawResponse: "",
+          }],
+          lastTurnSnapshot: undefined,
+          isChattingWith: undefined,
+        });
+      },
 
       exportSave: () => {
         const state = get();

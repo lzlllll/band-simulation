@@ -7,6 +7,7 @@ import {
   Megaphone,
   Share2,
   Settings,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
@@ -25,6 +26,7 @@ const NAV: NavItem[] = [
   { to: "/activities", label: "活动中心", sub: "Actions", icon: CalendarDays },
   { to: "/gigs", label: "演出邀约", sub: "Gigs", icon: Megaphone },
   { to: "/social", label: "社交帐号", sub: "Social", icon: Share2 },
+  { to: "/create", label: "重新创建", sub: "Create", icon: Sparkles },
   { to: "/settings", label: "设置", sub: "Settings", icon: Settings },
 ];
 
