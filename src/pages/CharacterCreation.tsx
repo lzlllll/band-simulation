@@ -158,6 +158,31 @@ export default function CharacterCreation() {
     return name.charAt(0);
   };
 
+  function extractBlock(raw: string, tag: string): string | null {
+    const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, "i");
+    const m = raw.match(re);
+    return m ? m[1].trim() : null;
+  }
+
+  function parseKeyValueBlock(block: string): Map<string, string> {
+    const map = new Map<string, string>();
+    for (const line of block.split(/\n+/)) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      const colonIdx = trimmed.search(/[:：]/);
+      if (colonIdx < 0) continue;
+      const key = trimmed.slice(0, colonIdx).trim().toLowerCase();
+      const val = trimmed.slice(colonIdx + 1).trim();
+      if (key) map.set(key, val);
+    }
+    return map;
+  }
+
+  function parseNumber(s: string): number | undefined {
+    const n = Number(s);
+    return Number.isFinite(n) ? n : undefined;
+  }
+
   const generateWithAI = async () => {
     if (!ready) return;
     setIsGenerating(true);
@@ -182,43 +207,64 @@ ${formData.customPrompt || "使用表单中的配置"}
 - 玩家技能: ${formData.playerSkills.map(s => `${s.name}:${s.level}`).join(", ") || "未指定"}
 - 成员数量: ${formData.members.length}
 
-请返回JSON格式数据，包含以下字段:
-{
-  "bandName": "乐队名称",
-  "motto": "乐队理念",
-  "styles": [{"style": "风格名", "level": 0-100, "color": "#颜色代码"}],
-  "player": {
-    "name": "姓名",
-    "age": 年龄,
-    "gender": "性别",
-    "role": "角色",
-    "avatar": "首字",
-    "bio": "背景故事",
-    "appearance": "外貌描述",
-    "personality": "性格描述",
-    "skills": [{"name": "技能名", "level": 0-100, "description": "技能描述"}],
-    "mood": 70
-  },
-  "members": [{
-    "name": "姓名",
-    "age": 年龄,
-    "role": "角色",
-    "avatar": "首字",
-    "skills": [{"name": "技能名", "level": 0-100, "description": "技能描述"}],
-    "cohesion": 60-85,
-    "mood": 50-80,
-    "salary": 3000-6000,
-    "bio": "简短背景",
-    "signature": "一句个性签名"
-  }],
-  "openingNarrative": "一段精彩的开场叙事(200-300字)"
-}
+请使用标记块格式返回数据，不要返回JSON:
+
+<band>
+名称: 乐队名称
+理念: 乐队理念
+</band>
+
+<styles>
+风格: 风格名, 等级: 0-100, 颜色: #颜色代码
+风格: 风格名, 等级: 0-100, 颜色: #颜色代码
+风格: 风格名, 等级: 0-100, 颜色: #颜色代码
+</styles>
+
+<player>
+姓名: 你的姓名
+年龄: 25
+性别: 男/女/其他
+角色: 你的职位
+头像: 首字(如"你")
+背景: 你的背景故事
+外貌: 外貌描述
+性格: 性格描述
+心情: 70
+</player>
+
+<player_skills>
+技能: 技能名称, 等级: 0-100, 描述: 技能描述
+技能: 技能名称, 等级: 0-100, 描述: 技能描述
+技能: 技能名称, 等级: 0-100, 描述: 技能描述
+</player_skills>
+
+<members>
+成员: 姓名
+角色: 主唱/吉他手/贝斯手/鼓手/键盘手等
+年龄: 27
+头像: 首字
+凝聚力: 60-85
+心情: 50-80
+薪资: 3000-6000
+背景: 简短背景
+签名: 一句个性签名
+技能: 技能名称, 等级: 0-100, 描述: 技能描述
+技能: 技能名称, 等级: 0-100, 描述: 技能描述
+---
+成员: 姓名
+...(更多成员，用---分隔)
+</members>
+
+<narrative>
+一段精彩的开场叙事(200-300字)
+</narrative>
 
 要求:
 1. 每个成员必须有独特的人设和技能
 2. 风格至少包含3种，与乐队风格匹配
 3. 开场叙事要引人入胜，介绍乐队的现状和未来的挑战
 4. 技能名称要具体，如"和弦编排""电吉他solo""人际关系处理"等
+5. 严格使用标记块格式，不要返回任何JSON格式内容
 `;
 
     try {
@@ -245,13 +291,12 @@ ${formData.customPrompt || "使用表单中的配置"}
 
       const data = await res.json();
       const content = data?.choices?.[0]?.message?.content || "";
-      
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error("无法解析AI返回的JSON");
+
+      const result = parseMarkupOpening(content);
+      if (!result) {
+        throw new Error("无法解析AI返回的标记块格式");
       }
 
-      const result = JSON.parse(jsonMatch[0]) as GeneratedOpening;
       setGeneratedData(result);
     } catch (err) {
       console.error("AI生成失败:", err);
@@ -260,6 +305,132 @@ ${formData.customPrompt || "使用表单中的配置"}
       setIsGenerating(false);
     }
   };
+
+  function parseMarkupOpening(content: string): GeneratedOpening | null {
+    try {
+      const bandBlock = extractBlock(content, "band");
+      const bandMap = bandBlock ? parseKeyValueBlock(bandBlock) : new Map();
+      const bandName = bandMap.get("名称") || bandMap.get("bandname") || "无名乐队";
+      const motto = bandMap.get("理念") || bandMap.get("motto") || "追逐音乐梦想";
+
+      const stylesBlock = extractBlock(content, "styles");
+      const styles: { style: string; level: number; color: string }[] = [];
+      if (stylesBlock) {
+        for (const line of stylesBlock.split(/\n+/)) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          const styleMatch = trimmed.match(/风格[：:]\s*([^,，]+)/);
+          const levelMatch = trimmed.match(/等级[：:]\s*(\d+)/);
+          const colorMatch = trimmed.match(/颜色[：:]\s*([#A-Fa-f0-9]+)/);
+          if (styleMatch) {
+            styles.push({
+              style: styleMatch[1].trim(),
+              level: parseNumber(levelMatch?.[1] || "50") || 50,
+              color: colorMatch?.[1] || "#E8A33D",
+            });
+          }
+        }
+      }
+
+      const playerBlock = extractBlock(content, "player");
+      const playerMap = playerBlock ? parseKeyValueBlock(playerBlock) : new Map();
+      const playerName = playerMap.get("姓名") || playerMap.get("name") || "你";
+      const playerAge = parseNumber(playerMap.get("年龄") || playerMap.get("age") || "25") || 25;
+      const playerGender = playerMap.get("性别") || playerMap.get("gender") || "男";
+      const playerRole = playerMap.get("角色") || playerMap.get("role") || "乐队经理";
+      const playerAvatar = playerMap.get("头像") || playerMap.get("avatar") || playerName.charAt(0);
+      const playerBio = playerMap.get("背景") || playerMap.get("bio") || "热爱音乐的年轻人";
+      const playerAppearance = playerMap.get("外貌") || playerMap.get("appearance") || "普通的音乐人";
+      const playerPersonality = playerMap.get("性格") || playerMap.get("personality") || "热情开朗";
+      const playerMood = parseNumber(playerMap.get("心情") || playerMap.get("mood") || "70") || 70;
+
+      const playerSkillsBlock = extractBlock(content, "player_skills");
+      const playerSkills: { name: string; level: number; description?: string }[] = [];
+      if (playerSkillsBlock) {
+        for (const line of playerSkillsBlock.split(/\n+/)) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          const skillMatch = trimmed.match(/技能[：:]\s*([^,，]+)/);
+          const levelMatch = trimmed.match(/等级[：:]\s*(\d+)/);
+          const descMatch = trimmed.match(/描述[：:]\s*(.+)/);
+          if (skillMatch) {
+            playerSkills.push({
+              name: skillMatch[1].trim(),
+              level: parseNumber(levelMatch?.[1] || "50") || 50,
+              description: descMatch?.[1]?.trim(),
+            });
+          }
+        }
+      }
+
+      const membersBlock = extractBlock(content, "members");
+      const members: { name: string; age: number; role: string; avatar: string; skills: { name: string; level: number; description?: string }[]; cohesion: number; mood: number; salary: number; bio: string; signature: string }[] = [];
+      if (membersBlock) {
+        const memberSections = membersBlock.split(/---/);
+        for (const section of memberSections) {
+          const secMap = parseKeyValueBlock(section);
+          const name = secMap.get("成员") || secMap.get("姓名") || secMap.get("name");
+          if (!name) continue;
+
+          const memberSkills: { name: string; level: number; description?: string }[] = [];
+          const lines = section.split(/\n+/);
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("技能")) continue;
+            const skillMatch = trimmed.match(/技能[：:]\s*([^,，]+)/);
+            const levelMatch = trimmed.match(/等级[：:]\s*(\d+)/);
+            const descMatch = trimmed.match(/描述[：:]\s*(.+)/);
+            if (skillMatch) {
+              memberSkills.push({
+                name: skillMatch[1].trim(),
+                level: parseNumber(levelMatch?.[1] || "50") || 50,
+                description: descMatch?.[1]?.trim(),
+              });
+            }
+          }
+
+          members.push({
+            name: name.trim(),
+            age: parseNumber(secMap.get("年龄") || secMap.get("age") || "27") || 27,
+            role: secMap.get("角色") || secMap.get("role") || "成员",
+            avatar: secMap.get("头像") || secMap.get("avatar") || name.trim().charAt(0),
+            skills: memberSkills.length > 0 ? memberSkills : [{ name: "音乐演奏", level: 60 }],
+            cohesion: parseNumber(secMap.get("凝聚力") || secMap.get("cohesion") || "70") || 70,
+            mood: parseNumber(secMap.get("心情") || secMap.get("mood") || "65") || 65,
+            salary: parseNumber(secMap.get("薪资") || secMap.get("salary") || "4000") || 4000,
+            bio: secMap.get("背景") || secMap.get("bio") || `${name}, ${secMap.get("年龄")}岁，${secMap.get("角色")}。`,
+            signature: secMap.get("签名") || secMap.get("signature") || "暂无签名",
+          });
+        }
+      }
+
+      const narrativeBlock = extractBlock(content, "narrative");
+      const openingNarrative = narrativeBlock || `${bandName}是一支充满梦想的乐队。${motto}`;
+
+      return {
+        bandName,
+        motto,
+        styles: styles.length > 0 ? styles : [{ style: "摇滚", level: 50, color: "#E8A33D" }],
+        player: {
+          name: playerName,
+          age: playerAge,
+          gender: playerGender,
+          role: playerRole,
+          avatar: playerAvatar,
+          bio: playerBio,
+          appearance: playerAppearance,
+          personality: playerPersonality,
+          skills: playerSkills.length > 0 ? playerSkills : [{ name: "音乐鉴赏", level: 60 }],
+          mood: playerMood,
+        },
+        members: members.length > 0 ? members : [],
+        openingNarrative,
+      };
+    } catch (err) {
+      console.error("解析标记块失败:", err);
+      return null;
+    }
+  }
 
   const startGame = () => {
     const { initializeGame } = useGameStore.getState();
