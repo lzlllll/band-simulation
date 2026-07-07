@@ -2,7 +2,6 @@ import { PageShell } from "../components/shared/PageShell";
 import { MemberCard } from "../components/roster/MemberCard";
 import { SectionTitle, StatBar, Tag } from "../components/shared/StatBar";
 import { useGameStore } from "../store/gameStore";
-import { INITIAL_STYLES } from "../data/styles";
 
 function cohesionState(v: number) {
   if (v >= 85) return { label: "完美", color: "#7BA05B" };
@@ -97,7 +96,7 @@ export default function Roster() {
         />
         <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
           {styles.map((s) => {
-            const color = INITIAL_STYLES.find((x) => x.style === s.style)?.color ?? "#8B7E6E";
+            const color = s.color ?? "#8B7E6E";
             return (
               <div key={s.style} className="flex items-center gap-3">
                 <Tag color={color}>{s.style}</Tag>

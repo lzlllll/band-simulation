@@ -280,7 +280,7 @@ ${formData.customPrompt || "使用表单中的配置"}
           model: llmConfig.proModel || llmConfig.model,
           messages: [{ role: "user", content: prompt }],
           temperature: 0.8,
-          max_tokens: 3000,
+          max_tokens: 16384,
           stream: false,
         }),
       });
@@ -435,9 +435,9 @@ ${formData.customPrompt || "使用表单中的配置"}
 
   const startGame = async () => {
     const { initializeGame, processTurn } = useGameStore.getState();
-    
+
     setIsStartingGame(true);
-    
+
     try {
       let newPlayer: any;
       let newMembers: any[];
@@ -490,10 +490,10 @@ ${formData.customPrompt || "使用表单中的配置"}
         openingNarrative: newOpening,
       });
 
-      const initialAction = formData.customPrompt 
+      const initialAction = formData.customPrompt
         ? `根据设定开始新的一天：${formData.customPrompt.slice(0, 100)}`
         : "召集乐队成员开始新的一天";
-      
+
       await processTurn(initialAction);
 
       navigate("/");

@@ -15,12 +15,6 @@ import type {
   StyleProficiency,
   TurnSnapshot,
 } from "../types";
-import { INITIAL_MEMBERS } from "../data/members";
-import { INITIAL_SONGS } from "../data/songs";
-import { INITIAL_STYLES } from "../data/styles";
-import { INITIAL_SOCIAL } from "../data/social";
-import { INITIAL_GIGS } from "../data/gigs";
-import { INITIAL_PLAYER } from "../data/player";
 import {
   generateProResponse,
   isLLMReady,
@@ -401,39 +395,32 @@ interface Actions {
 export type GameStore = GameState & Actions;
 
 const initial: GameState = {
-  bandName: "夜行列车",
-  motto: "走到哪算哪,唱到死为止。",
+  bandName: "",
+  motto: "",
   date: INITIAL_DATE,
   turn: 1,
   money: INITIAL_MONEY,
   fame: INITIAL_FAME,
   cohesion: INITIAL_COHESION,
-  player: INITIAL_PLAYER,
-  members: INITIAL_MEMBERS,
-  songs: INITIAL_SONGS,
-  styles: INITIAL_STYLES,
-  social: INITIAL_SOCIAL,
-  gigInvites: INITIAL_GIGS,
-  narratives: [
-    {
-      turn: 0,
-      date: INITIAL_DATE,
-      action: "intro",
-      actionLabel: "故事开始",
-      userInput: "",
-      narrative:
-        "夜行列车是一支签不出去也散不了伙的独立乐队。五个住在不同城市的人,被一首没发出去的 demo 绑在一起。今天,他们要在排练室里决定,接下来的一年怎么过。\n\n你,是其中之一。在右侧输入你想做的事,乐队的故事就会往下走。",
-      delta: {},
-      suggestions: [
-        { text: "召集大家进棚排练《夜行列车》", kind: "action" },
-        { text: "给成员群发一条消息聊聊近况", kind: "action" },
-        { text: "看看最近有什么演出邀约", kind: "gig" },
-      ],
-      newContent: {},
-      source: "llm",
-      rawResponse: "",
-    },
-  ],
+  player: {
+    id: "player",
+    name: "",
+    age: 25,
+    gender: "男",
+    role: "",
+    avatar: "",
+    bio: "",
+    appearance: "",
+    personality: "",
+    skills: [],
+    mood: 70,
+  },
+  members: [],
+  songs: [],
+  styles: [],
+  social: [],
+  gigInvites: [],
+  narratives: [],
   pendingEvent: undefined,
   schedule: [],
   llmConfig: DEFAULT_LLM,
@@ -689,13 +676,16 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         const members = data.members.length > 0 
           ? data.members.map((m, i) => ({ ...m, id: `m${i + 1}` }))
-          : INITIAL_MEMBERS;
+          : [];
         set({
           bandName: data.bandName,
           motto: data.motto,
           player: { ...data.player, id: "player" },
           members,
-          styles: data.styles || initial.styles,
+          styles: data.styles || [],
+          songs: [],
+          social: [],
+          gigInvites: [],
           narratives: [{
             turn: 0,
             date: state.date,

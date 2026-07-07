@@ -1,6 +1,4 @@
 import { PageShell } from "../components/shared/PageShell";
-import { ActivityCard } from "../components/activities/ActivityCard";
-import { ACTIVITIES } from "../data/activities";
 import { useGameStore } from "../store/gameStore";
 
 export default function Activities() {
@@ -22,15 +20,32 @@ export default function Activities() {
         </div>
       }
     >
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {ACTIVITIES.map((a) => (
-          <ActivityCard key={a.id} activity={a} />
-        ))}
+      <div className="card-edge p-6 text-center">
+        <p className="font-body text-sm text-cream-mute">
+          在右侧行动面板中自由输入你的决策,AI 将根据你的选择生成相应的叙事和后果。
+        </p>
+        <p className="mt-4 font-display text-sm italic text-amber">
+          "每一次选择都会成为编年史里的一笔"
+        </p>
       </div>
 
-      <p className="mt-6 border-t border-ink-600 pt-4 text-center font-display text-sm italic text-cream-fade">
-        · 每一次选择都会成为编年史里的一笔 ·
-      </p>
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[
+          { name: "排练", hint: "进棚打磨现有曲目的细节" },
+          { name: "录音", hint: "把新动机做成正式 demo" },
+          { name: "宣传", hint: "联系媒体、做内容、铺分发" },
+          { name: "休息", hint: "全员休整,消化情绪" },
+          { name: "巡演", hint: "多城连演,曝光换收入" },
+          { name: "写新歌", hint: "尝试创作一首新作品" },
+          { name: "团建", hint: "一起吃饭喝酒聊近况" },
+          { name: "看别人演出", hint: "去 livehouse 找灵感" },
+        ].map((a, i) => (
+          <div key={i} className="card-edge p-4">
+            <h3 className="font-display text-lg text-cream">{a.name}</h3>
+            <p className="mt-2 font-body text-xs text-cream-mute">{a.hint}</p>
+          </div>
+        ))}
+      </div>
     </PageShell>
   );
 }

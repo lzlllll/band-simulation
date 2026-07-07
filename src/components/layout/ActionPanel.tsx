@@ -1,9 +1,19 @@
 import { useState } from "react";
 import { Loader2, RotateCcw, Send, Sparkles, Zap } from "lucide-react";
 import { useGameStore } from "../../store/gameStore";
-import { ACTIVITIES } from "../../data/activities";
 import { EventBanner } from "../shared/EventBanner";
 import { cn } from "../../lib/utils";
+
+const INSPIRATION_CHIPS = [
+  { name: "排练", hint: "进棚打磨现有曲目的细节" },
+  { name: "录音", hint: "把新动机做成正式 demo" },
+  { name: "宣传", hint: "联系媒体、做内容、铺分发" },
+  { name: "休息", hint: "全员休整,消化情绪" },
+  { name: "巡演", hint: "多城连演,曝光换收入" },
+  { name: "写新歌", hint: "尝试创作一首新作品" },
+  { name: "团建", hint: "一起吃饭喝酒聊近况" },
+  { name: "看别人演出", hint: "去 livehouse 找灵感" },
+];
 
 export function ActionPanel() {
   const isGenerating = useGameStore((s) => s.isGenerating);
@@ -114,9 +124,9 @@ export function ActionPanel() {
             <span className="font-mono text-[9px] text-cream-fade">点击填入</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {ACTIVITIES.map((a) => (
+            {INSPIRATION_CHIPS.map((a, i) => (
               <button
-                key={a.id}
+                key={i}
                 type="button"
                 disabled={isGenerating}
                 onClick={() => onChip(a.name)}

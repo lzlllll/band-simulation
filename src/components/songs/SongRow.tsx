@@ -3,12 +3,19 @@ import { ChevronDown, ChevronUp, Disc3 } from "lucide-react";
 import type { Song } from "../../types";
 import { Tag } from "../shared/StatBar";
 import { StatBar } from "../shared/StatBar";
-import { INITIAL_STYLES } from "../../data/styles";
 import { cn } from "../../lib/utils";
 
-const STYLE_COLORS: Record<string, string> = Object.fromEntries(
-  INITIAL_STYLES.map((s) => [s.style, s.color]),
-);
+const FALLBACK_STYLE_COLORS: Record<string, string> = {
+  "摇滚": "#E8A33D",
+  "朋克": "#C5303A",
+  "独立": "#7BA05B",
+  "电子": "#6B8FB8",
+  "民谣": "#B88A6B",
+  "金属": "#4A4A4A",
+  "爵士": "#A67C52",
+  "流行": "#E8A33D",
+  "嘻哈": "#7BA05B",
+};
 
 function formatDuration(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -18,7 +25,7 @@ function formatDuration(sec: number): string {
 
 export function SongRow({ song, index }: { song: Song; index: number }) {
   const [expanded, setExpanded] = useState(false);
-  const color = STYLE_COLORS[song.style] ?? "#8B7E6E";
+  const color = FALLBACK_STYLE_COLORS[song.style] ?? "#8B7E6E";
 
   return (
     <article className="card-edge overflow-hidden">

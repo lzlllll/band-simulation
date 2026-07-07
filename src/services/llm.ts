@@ -170,9 +170,9 @@ const STYLE_HINT = {
 } as const;
 
 const LENGTH_HINT = {
-  short: "150 字左右",
-  medium: "220 字左右",
-  long: "300 字左右",
+  short: "1000 字左右",
+  medium: "2000 字左右",
+  long: "3000 字左右",
 } as const;
 
 const PRO_SYSTEM = `你是一款文字向「乐队经营模拟」游戏的叙事者与裁判。
@@ -431,8 +431,8 @@ export async function generateProResponse(
 
   const raw = await callChat(cfg, resolveProModel(cfg), system, user, {
     temperature: 0.9,
-    maxTokens: 1500,
-    timeoutMs: 45000,
+    maxTokens: 16384,
+    timeoutMs: 90000,
   });
 
   return { raw, parsed: parseAIResponse(raw) };
