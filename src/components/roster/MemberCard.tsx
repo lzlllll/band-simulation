@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, MessageCircle, Trash2 } from "lucide-react";
 import type { Member } from "../../types";
 import { StatBar, Tag } from "../shared/StatBar";
 import { cn } from "../../lib/utils";
@@ -17,9 +17,10 @@ function roleColor(role: string): string {
 export function MemberCard({ member }: { member: Member }) {
   const [expanded, setExpanded] = useState(false);
   const color = roleColor(member.role);
-  const { startChat } = useGameStore();
+  const { startChat, removeMember, members } = useGameStore();
   const moodLabel =
     member.mood >= 75 ? "愉悦" : member.mood >= 50 ? "稳定" : member.mood >= 30 ? "低落" : "崩溃";
+  const canRemove = members.length > 1;
 
   return (
     <article className="card-edge group relative overflow-hidden">
@@ -55,6 +56,15 @@ export function MemberCard({ member }: { member: Member }) {
                 >
                   <MessageCircle className="w-4 h-4" />
                 </button>
+                {canRemove && (
+                  <button
+                    onClick={() => removeMember(member.id)}
+                    className="p-1.5 text-gray-500 hover:text-red-500 hover:bg-[#2a2523] rounded-lg transition-colors"
+                    title="删除成员"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
             <div className="mt-1 flex items-center gap-2">

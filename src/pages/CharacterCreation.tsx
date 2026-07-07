@@ -60,6 +60,7 @@ export default function CharacterCreation() {
 
   const [activeSection, setActiveSection] = useState<"llm" | "band" | "player" | "members" | "ai">("llm");
   const [generatedData, setGeneratedData] = useState<GeneratedOpening | null>(null);
+  const [isStartingGame, setIsStartingGame] = useState(false);
 
   const ready = isLLMReady(llmConfig);
 
@@ -432,61 +433,76 @@ ${formData.customPrompt || "使用表单中的配置"}
     }
   }
 
-  const startGame = () => {
-    const { initializeGame } = useGameStore.getState();
+  const startGame = async () => {
+    const { initializeGame, processTurn } = useGameStore.getState();
     
-    let newPlayer: any;
-    let newMembers: any[];
-    let newBandName = "";
-    let newMotto = "";
-    let newStyles: any[] | undefined;
-    let newOpening = "";
+    setIsStartingGame(true);
+    
+    try {
+      let newPlayer: any;
+      let newMembers: any[];
+      let newBandName = "";
+      let newMotto = "";
+      let newStyles: any[] | undefined;
+      let newOpening = "";
 
-    if (generatedData) {
-      newPlayer = generatedData.player;
-      newMembers = generatedData.members;
-      newBandName = generatedData.bandName;
-      newMotto = generatedData.motto;
-      newStyles = generatedData.styles;
-      newOpening = generatedData.openingNarrative;
-    } else {
-      newPlayer = {
-        name: formData.playerName || "你",
-        age: formData.playerAge,
-        gender: formData.playerGender,
-        role: formData.playerRole,
-        avatar: formData.playerAvatar || randomAvatar(formData.playerName),
-        bio: formData.playerBackground || "热爱音乐的年轻人",
-        appearance: formData.playerAppearance || "普通的音乐人",
-        personality: formData.playerPersonality || "热情开朗",
-        skills: formData.playerSkills.filter(s => s.name).map((s, i) => ({ ...s, id: `p${i + 1}` })),
-        mood: 70,
-      };
+      if (generatedData) {
+        newPlayer = generatedData.player;
+        newMembers = generatedData.members;
+        newBandName = generatedData.bandName;
+        newMotto = generatedData.motto;
+        newStyles = generatedData.styles;
+        newOpening = generatedData.openingNarrative;
+      } else {
+        newPlayer = {
+          name: formData.playerName || "你",
+          age: formData.playerAge,
+          gender: formData.playerGender,
+          role: formData.playerRole,
+          avatar: formData.playerAvatar || randomAvatar(formData.playerName),
+          bio: formData.playerBackground || "热爱音乐的年轻人",
+          appearance: formData.playerAppearance || "普通的音乐人",
+          personality: formData.playerPersonality || "热情开朗",
+          skills: formData.playerSkills.filter(s => s.name).map((s, i) => ({ ...s, id: `p${i + 1}` })),
+          mood: 70,
+        };
 
-      newMembers = formData.members.filter(m => m.name).map((m, i) => ({
-        ...m,
-        cohesion: Math.floor(Math.random() * 25) + 60,
-        mood: Math.floor(Math.random() * 30) + 50,
-        salary: Math.floor(Math.random() * 3000) + 3000,
-        bio: m.bio || `${m.name}, ${m.age}岁，${m.role}。`,
-        signature: m.signature || "暂无签名",
-        skills: m.skills.filter(s => s.name).map((s, j) => ({ ...s, id: `s${i + 1}_${j + 1}` })),
-      }));
+        newMembers = formData.members.filter(m => m.name).map((m, i) => ({
+          ...m,
+          cohesion: Math.floor(Math.random() * 25) + 60,
+          mood: Math.floor(Math.random() * 30) + 50,
+          salary: Math.floor(Math.random() * 3000) + 3000,
+          bio: m.bio || `${m.name}, ${m.age}岁，${m.role}。`,
+          signature: m.signature || "暂无签名",
+          skills: m.skills.filter(s => s.name).map((s, j) => ({ ...s, id: `s${i + 1}_${j + 1}` })),
+        }));
 
-      newBandName = formData.bandName || "无名乐队";
-      newMotto = formData.bandMotto || "追逐音乐梦想";
+        newBandName = formData.bandName || "无名乐队";
+        newMotto = formData.bandMotto || "追逐音乐梦想";
+      }
+
+      initializeGame({
+        bandName: newBandName,
+        motto: newMotto,
+        player: newPlayer,
+        members: newMembers.length > 0 ? newMembers : [],
+        styles: newStyles,
+        openingNarrative: newOpening,
+      });
+
+      const initialAction = formData.customPrompt 
+        ? `根据设定开始新的一天：${formData.customPrompt.slice(0, 100)}`
+        : "召集乐队成员开始新的一天";
+      
+      await processTurn(initialAction);
+
+      navigate("/");
+    } catch (err) {
+      console.error("开始游戏失败:", err);
+      alert(`开始游戏失败: ${(err as Error).message}`);
+    } finally {
+      setIsStartingGame(false);
     }
-
-    initializeGame({
-      bandName: newBandName,
-      motto: newMotto,
-      player: newPlayer,
-      members: newMembers.length > 0 ? newMembers : [],
-      styles: newStyles,
-      openingNarrative: newOpening,
-    });
-
-    navigate("/");
   };
 
   const useDefaultConfig = () => {
@@ -867,7 +883,13 @@ ${formData.customPrompt || "使用表单中的配置"}
                         />
                         <button
                           onClick={() => removeMember(mIndex)}
-                          className="border border-crimson px-3 py-1.5 font-mono text-xs text-crimson hover:bg-crimson/10 transition"
+                          disabled={formData.members.length <= 1}
+                          className={cn(
+                            "border px-3 py-1.5 font-mono text-xs transition",
+                            formData.members.length <= 1
+                              ? "border-ink-600 text-cream-fade cursor-not-allowed"
+                              : "border-crimson text-crimson hover:bg-crimson/10",
+                          )}
                         >
                           删除
                         </button>
@@ -1026,10 +1048,20 @@ ${formData.customPrompt || "使用表单中的配置"}
           </button>
           <button
             onClick={startGame}
-            className="flex items-center gap-2 border border-amber bg-amber/10 px-6 py-3 font-mono text-xs uppercase tracking-wider2 text-amber hover:bg-amber/20 transition"
+            disabled={isStartingGame}
+            className={cn(
+              "flex items-center gap-2 border px-6 py-3 font-mono text-xs uppercase tracking-wider2 transition",
+              isStartingGame
+                ? "border-ink-600 text-cream-fade cursor-not-allowed"
+                : "border-amber bg-amber/10 text-amber hover:bg-amber/20",
+            )}
           >
-            <Save className="w-4 h-4" />
-            开始游戏
+            {isStartingGame ? (
+              <div className="w-4 h-4 border-2 border-amber border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {isStartingGame ? "生成第一轮内容..." : "开始游戏"}
           </button>
         </div>
       </div>

@@ -395,6 +395,7 @@ interface Actions {
     styles?: StyleProficiency[];
     openingNarrative?: string;
   }) => void;
+  removeMember: (memberId: string) => void;
 }
 
 export type GameStore = GameState & Actions;
@@ -714,6 +715,17 @@ export const useGameStore = create<GameStore>()(
           }],
           lastTurnSnapshot: undefined,
           isChattingWith: undefined,
+        });
+      },
+
+      removeMember: (memberId) => {
+        const state = get();
+        if (state.members.length <= 1) {
+          return;
+        }
+        set({
+          members: state.members.filter((m) => m.id !== memberId),
+          isChattingWith: state.isChattingWith === memberId ? undefined : state.isChattingWith,
         });
       },
 
