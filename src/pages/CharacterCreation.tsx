@@ -257,7 +257,7 @@ ${formData.customPrompt || "使用表单中的配置"}
 </members>
 
 <narrative>
-一段精彩的开场叙事(200-300字)
+一段精彩的开场叙事(1000字左右)，小说文风
 </narrative>
 
 要求:
